@@ -1,4 +1,4 @@
-import { getIntrospectionQuery, IntrospectionEnumType, IntrospectionInputObjectType, IntrospectionInputType, IntrospectionInputTypeRef, IntrospectionInterfaceType, IntrospectionListTypeRef, IntrospectionNamedTypeRef, IntrospectionNonNullTypeRef, IntrospectionObjectType, IntrospectionOutputType, IntrospectionOutputTypeRef, IntrospectionQuery, IntrospectionScalarType, IntrospectionSchema, IntrospectionType, IntrospectionTypeRef, IntrospectionUnionType } from 'graphql';
+import { getIntrospectionQuery, IntrospectionEnumType, IntrospectionInputObjectType, IntrospectionInputType, IntrospectionInputTypeRef, IntrospectionInterfaceType, IntrospectionListTypeRef, IntrospectionNamedTypeRef, IntrospectionNonNullTypeRef, IntrospectionObjectType, IntrospectionOutputType, IntrospectionOutputTypeRef, IntrospectionQuery, IntrospectionScalarType, IntrospectionSchema, IntrospectionType, IntrospectionTypeRef, IntrospectionUnionType, TypeKind } from 'graphql';
 import React, { useState } from 'react';
 import { BrowserRouter, Link, Route, Switch, useParams, useRouteMatch } from 'react-router-dom';
 
@@ -34,7 +34,7 @@ function App() {
       </Route>
       <Route path="/:type">
         {schema ?
-          <Schema schema={schema} />
+          <TemplateSchema schema={schema} />
           : <div>Schema at [{endpoint}] not found.</div>
         }
       </Route>
@@ -98,115 +98,6 @@ function getIntrospectionType(type: IntrospectionTypeRef): GetIntrospectionTypeR
 interface SchemaProps {
   schema: IntrospectionSchema
 }
-function Schema(props: SchemaProps) {
-  const { url } = useRouteMatch()
-  console.log(url)
-  const { type } = useParams<{ type: string }>()
-  const schema = props.schema.types.find(obj => obj.name === type)
-  if (schema) {
-    let content : JSX.Element
-    if (isIntrospectionObjectType(schema) || isIntrospectionInterfaceType(schema)) {
-      if (type === props.schema.queryType.name
-        || (props.schema.mutationType && type === props.schema.mutationType.name)
-        || (props.schema.subscriptionType && type === props.schema.subscriptionType.name)) {
-        // * Query, Mutation, Subscription Type
-        // * View => FieldName(ArgName: ArgType) : FieldName
-        // TODO: 템플릿화
-        content = (
-          <div>
-            <h2>{schema.name}</h2>
-            <ul>
-              {/* Each Field */}
-              {schema.fields.map(field => {
-                const { plainType, details } = getIntrospectionType(field.type)
-                return (
-                  <li key={field.name}>
-                    {field.name}({
-                      // Each Args
-                      field.args.map(arg => {
-                        const { plainType, details } = getIntrospectionType(arg.type)
-                        return <span key={arg.name}>{arg.name} : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}</span>
-                      })
-                    }) : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        )
-      }
-      else {
-        content = (
-          <div>
-            <h2>{schema.name} : {schema.kind}</h2>
-            <ul>
-              {schema.fields.map(field => {
-                const { plainType, details } = getIntrospectionType(field.type)
-                return (
-                  <li key={field.name}>
-                    {field.name} : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        )
-      }
-    }
-    else if(isIntrospectionEnumType(schema)){
-      content = (
-        <div>
-          <h2>{schema.name} : {schema.kind}</h2>
-          <ul>
-            {schema.enumValues.map(enumValue => {return <li key={enumValue.name}>{enumValue.name}</li>})}
-          </ul>
-        </div>
-      )
-    }
-    else if(isIntrospectionUnionType(schema)){
-      content = (
-        <div>
-          <h2>{schema.name} : {schema.kind}</h2>
-          <ul>
-            {schema.possibleTypes.map(possibleType => {
-              const {plainType, details} = getIntrospectionType(possibleType)
-              return <li key={possibleType.name}>{details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}</li>})}
-          </ul>
-        </div>
-      )
-    }
-    else if(isIntrospectionInputObjectType(schema)){
-      content = (
-        <div>
-          <h2>{schema.name} : {schema.kind}</h2>
-          <ul>
-            {schema.inputFields.map(inputField => {
-              const { plainType, details } = getIntrospectionType(inputField.type)
-              return <span key={inputField.name}>{inputField.name} : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}</span>})}
-          </ul>
-        </div>
-      )
-    }
-    else {
-      return (
-        <div>
-          <h2>{schema.name} : {schema.kind}</h2>
-        </div>
-      )
-    }
-    return (
-      <div>
-        {content}
-        <Switch>
-          <Route path={`${url}/:type`}>
-            <Schema schema={props.schema}></Schema>
-          </Route>
-        </Switch>
-      </div>
-    )
-  }
-  return <div>Schema [{type}] not found.</div>
-}
 
 // * Type Guards : For Types
 
@@ -253,4 +144,231 @@ function isIntrospectionNonNullTypeRef_OutputType(obj: IntrospectionOutputTypeRe
 function isIntrospectionListTypeRef(obj: IntrospectionInputTypeRef | IntrospectionOutputTypeRef | IntrospectionTypeRef)
   : obj is IntrospectionListTypeRef<any> {
   return obj.kind === 'LIST'
+}
+
+// * 템플릿 사용할 수 있도록 변경하는 부분
+interface AnalyzeSchemaField {
+  fieldName: string
+  fieldType?: GetIntrospectionTypeResult
+  description?: string
+  isDeprecated: boolean // ! Only 'fields' and 'enums' can be deprecated
+  deprecatedReason?: string
+  defaultValue?: string
+}
+interface AnalyzeSchemaResult {
+  typeName : string
+  typeKind : 'Query' | 'Mutation' | 'Subscription' | 'Type' | 'Enum' | 'Union' | 'Input' | 'Scalar'
+  fields : (AnalyzeSchemaField & {args?: AnalyzeSchemaField[]})[]
+}
+
+interface AnalyzeSchemaByTypeProps {
+  schema: IntrospectionSchema,
+  curType: string
+}
+
+// * schema에서 curType를 찾아서 분석한 결과를 돌려줌
+function analyzeSchemaByType(props: AnalyzeSchemaByTypeProps) : AnalyzeSchemaResult | undefined {
+  const type = props.curType
+  const schema = props.schema.types.find(obj => obj.name === type)
+  if (schema) {
+    if (isIntrospectionObjectType(schema) || isIntrospectionInterfaceType(schema)) {
+      let typeName : AnalyzeSchemaResult['typeName']
+      let typeKind : AnalyzeSchemaResult['typeKind']
+      if(type === props.schema.queryType.name){
+        typeName = typeKind = 'Query'
+      }
+      else if(props.schema.mutationType && type === props.schema.mutationType.name){
+        typeName = typeKind = 'Mutation'
+      }
+      else if(props.schema.subscriptionType && type === props.schema.subscriptionType.name){
+        typeName = typeKind = 'Subscription'
+      }
+      else {
+        typeName = schema.name
+        typeKind = 'Type'
+      }
+      // * Query, Mutation, Subscription, Type(Object, Interface)
+      // * View => FieldName(ArgName: ArgType) : FieldName
+      const fields: AnalyzeSchemaResult['fields'] = schema.fields.map(field => {
+        return {
+          fieldName: field.name,
+          fieldType: getIntrospectionType(field.type),
+          description: field.description,
+          isDeprecated: field.isDeprecated,
+          deprecatedReason: field.deprecationReason,
+          args: field.args.map(arg => {
+            return {
+              fieldName: arg.name,
+              fieldType: getIntrospectionType(arg.type),
+              description: arg.description,
+              isDeprecated: arg.isDeprecated,
+              deprecatedReason: arg.deprecationReason,
+              defaultValue: arg.defaultValue
+            } as AnalyzeSchemaField
+          })
+        } as (AnalyzeSchemaField & { args: AnalyzeSchemaField[] })
+      }) as AnalyzeSchemaResult['fields']
+
+      return {
+        typeName,
+        typeKind,
+        fields,
+      }
+    }
+    else if(isIntrospectionEnumType(schema)){
+      return {
+        typeName: schema.name,
+        typeKind: 'Enum',
+        fields: schema.enumValues.map(enumValue => {
+          return {
+          fieldName: enumValue.name,
+          isDeprecated: enumValue.isDeprecated,
+          deprecatedReason: enumValue.deprecationReason,
+          description: enumValue.description
+        } as AnalyzeSchemaField})
+      }
+    }
+    else if(isIntrospectionUnionType(schema)){
+      return {
+        typeName: schema.name,
+        typeKind: 'Enum',
+        fields: schema.possibleTypes.map(possibleType => {
+          return {
+          fieldName: possibleType.name,
+          fieldType: getIntrospectionType(possibleType),
+          isDeprecated: false,
+        } as AnalyzeSchemaField})
+      }
+    }
+    else if(isIntrospectionInputObjectType(schema)){
+      return {
+        typeName: schema.name,
+        typeKind: 'Enum',
+        fields: schema.inputFields.map(inputField => {
+          return {
+          fieldName: inputField.name,
+          isDeprecated: inputField.isDeprecated,
+          deprecatedReason: inputField.deprecationReason,
+          description: inputField.description,
+          defaultValue: inputField.defaultValue
+        } as AnalyzeSchemaField})
+      }
+    }
+    else {
+      return {
+        typeName: schema.name,
+        typeKind: 'Scalar',
+        fields: []
+      }
+    }
+  }
+}
+
+function TemplateSchema(props: SchemaProps) {
+  const { url } = useRouteMatch()
+  const { type } = useParams<{ type: string }>()
+  const schema = analyzeSchemaByType({schema: props.schema, curType: type})
+  if (schema) {
+    let content : JSX.Element
+    if (schema.typeKind === 'Query'
+    || schema.typeKind === 'Mutation'
+    || schema.typeKind === 'Subscription') {
+        // * Query, Mutation, Subscription Type
+        // * View => FieldName(ArgName: ArgType) : FieldName
+        // TODO: 템플릿화
+        content = (
+          <div>
+            <h2>{schema.typeName}</h2>
+            <ul>
+              {/* Each Field */}
+              {schema.fields.map(field => {
+                const {details, plainType} = field.fieldType!
+                return (
+                  <li key={field.fieldName}>
+                    {field.fieldName}({
+                      // Each Args
+                      field.args && field.args.map((arg, idx, arr) => {
+                        const end = (idx + 1 < arr.length && ', ')
+                        const plainType = arg.fieldType!.plainType
+                        const details = arg.fieldType!.details
+                        return <span key={arg.fieldName}>{arg.fieldName} : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}{end}</span>
+                      })
+                    }) : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+          )
+      }
+      else if(schema.typeKind === 'Type') {
+        content = (
+          <div>
+            <h2>{schema.typeName} : {schema.typeKind}</h2>
+            <ul>
+              {schema.fields.map(field => {
+                const { plainType, details } = field.fieldType!
+                return (
+                  <li key={field.fieldName}>
+                    {field.fieldName} : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        )
+    }
+    else if(schema.typeKind === 'Enum'){
+      content = (
+        <div>
+          <h2>{schema.typeName} : {schema.typeKind}</h2>
+          <ul>
+            {schema.fields.map(enumValue => {return <li key={enumValue.fieldName}>{enumValue.fieldName}</li>})}
+          </ul>
+        </div>
+      )
+    }
+    else if(schema.typeKind ==='Union'){
+      content = (
+        <div>
+          <h2>{schema.typeName} : {schema.typeKind}</h2>
+          <ul>
+            {schema.fields.map(possibleType => {
+              const {plainType, details} = possibleType.fieldType!
+              return <li key={possibleType.fieldName}>{details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}</li>})}
+          </ul>
+        </div>
+      )
+    }
+    else if(schema.typeKind === 'Input'){
+      content = (
+        <div>
+          <h2>{schema.typeName} : {schema.typeKind}</h2>
+          <ul>
+            {schema.fields.map(inputField => {
+              const { plainType, details } = inputField.fieldType!
+              return <span key={inputField.fieldName}>{inputField.fieldName} : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}</span>})}
+          </ul>
+        </div>
+      )
+    }
+    else {
+      return (
+        <div>
+          <h2>{schema.typeName} : {schema.typeKind}</h2>
+        </div>
+      )
+    }
+    return (
+      <div>
+        {content}
+        <Switch>
+          <Route path={`${url}/:type`}>
+            <TemplateSchema schema={props.schema}></TemplateSchema>
+          </Route>
+        </Switch>
+      </div>
+    )
+  }
+  return <div>Schema [{type}] not found.</div>
 }
