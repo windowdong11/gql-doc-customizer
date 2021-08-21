@@ -119,17 +119,17 @@ export function analyzeSchemaByType(props: AnalyzeSchemaByTypeProps): AnalyzeSch
         if (isIntrospectionObjectType(schema) || isIntrospectionInterfaceType(schema)) {
             let typeName: AnalyzeSchemaResult['typeName']
             let typeKind: AnalyzeSchemaResult['typeKind']
+            typeName = schema.name
             if (type === props.schema.queryType.name) {
-                typeName = typeKind = 'Query'
+                typeKind = 'Query'
             }
             else if (props.schema.mutationType && type === props.schema.mutationType.name) {
-                typeName = typeKind = 'Mutation'
+                typeKind = 'Mutation'
             }
             else if (props.schema.subscriptionType && type === props.schema.subscriptionType.name) {
-                typeName = typeKind = 'Subscription'
+                typeKind = 'Subscription'
             }
             else {
-                typeName = schema.name
                 typeKind = 'Type'
             }
             // * Query, Mutation, Subscription, Type(Object, Interface)
