@@ -1,5 +1,5 @@
 import { useRouteMatch, useParams, Link, Switch, Route } from "react-router-dom"
-import { SchemaProps, analyzeSchemaByType, AnalyzeSchemaResult } from "../schemaInspector"
+import { SchemaProps, analyzeSchemaByType, AnalyzeSchemaResult } from "../introspector/schemaInspector"
 
 function SchemaTitle(props: { analyzeSchemaResult: Omit<AnalyzeSchemaResult, 'fields'> }) {
     const { typeName, typeKind } = props.analyzeSchemaResult

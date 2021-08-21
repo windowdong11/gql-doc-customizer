@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { BrowserRouter, Link, Route } from 'react-router-dom';
 import ResolverSelector from './components/ResolverSelector';
 import TemplateSchema from './components/TemplateSchema';
-import { getSchemaFromEndpoint } from './schemaInspector';
+import { getSchemaFromEndpoint } from './introspector/schemaInspector';
 
 function App() {
   const [endpoint, setEndpoint] = useState('http://localhost:4000')
