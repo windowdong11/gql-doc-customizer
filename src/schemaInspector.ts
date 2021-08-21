@@ -225,3 +225,13 @@ export function getSchemaFromEndpoint(endpoint: string){
         return json.data.__schema
     })
 }
+
+export function getQueryTypeName(schema: IntrospectionSchema){
+    return schema.queryType.name
+}
+export function getMutationTypeName(schema: IntrospectionSchema){
+    return schema.mutationType?.name
+}
+export function getSubscriptionTypeName(schema: IntrospectionSchema){
+    return schema.subscriptionType?.name
+}
