@@ -18,12 +18,12 @@ function SchemaContent({analyzeSchemaResult, pathUrl, curType}: SchemaContentPro
                     const { details, plainType } = fieldType!
                     return (
                         <li key={fieldName}>
-                            {fieldName}{args && !!args.length && `(${args.map((arg, idx, arr) => {
+                            {fieldName}{args && !!args.length && '('}{args && !!args.length && args.map((arg, idx, arr) => {
                                 const end = (idx + 1 < arr.length && ', ')
                                 const plainType = arg.fieldType!.plainType
                                 const details = arg.fieldType!.details
                                 return <span key={arg.fieldName}>{arg.fieldName} : {details.front}<Link to={`${pathUrl}/${plainType}`}>{plainType}</Link>{details.back}{end}</span>
-                            })})`} : {details.front}<Link to={`${pathUrl}/${plainType}`}>{plainType}</Link>{details.back}
+                            })}{args && !!args.length && ')'} : {details.front}<Link to={`${pathUrl}/${plainType}`}>{plainType}</Link>{details.back}
                         </li>
                     )
                 })}
