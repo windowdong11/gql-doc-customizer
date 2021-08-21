@@ -1,7 +1,7 @@
 import { getIntrospectionQuery, IntrospectionQuery, IntrospectionSchema } from 'graphql';
 import { useState } from 'react';
 import { BrowserRouter, Link, Route, Switch, useParams, useRouteMatch } from 'react-router-dom';
-import { SchemaProps, analyzeSchemaByType } from './schemaInspector';
+import { SchemaProps, analyzeSchemaByType, getSchemaFromEndpoint } from './schemaInspector';
 
 function App() {
   const [endpoint, setEndpoint] = useState('http://localhost:4000')
@@ -10,17 +10,7 @@ function App() {
     console.log(schema)
   }
   const getSchema = () => {
-    fetch(endpoint, {
-      method: "POST",
-      body: JSON.stringify({ query: getIntrospectionQuery() }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then(res => {
-      return res.json()
-    }).then((json: { data: IntrospectionQuery }) => {
-      setSchema(json.data.__schema)
-    })
+    getSchemaFromEndpoint(endpoint).then(schema => setSchema(schema))
   }
   return (
     <BrowserRouter>

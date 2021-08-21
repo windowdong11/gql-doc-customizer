@@ -1,4 +1,4 @@
-import { IntrospectionSchema, IntrospectionTypeRef, IntrospectionType, IntrospectionObjectType, IntrospectionInterfaceType, IntrospectionScalarType, IntrospectionUnionType, IntrospectionEnumType, IntrospectionInputObjectType, IntrospectionNamedTypeRef, IntrospectionNonNullTypeRef, IntrospectionListTypeRef, IntrospectionInputTypeRef, IntrospectionInputType, IntrospectionOutputTypeRef, IntrospectionOutputType } from "graphql"
+import { IntrospectionSchema, IntrospectionTypeRef, IntrospectionType, IntrospectionObjectType, IntrospectionInterfaceType, IntrospectionScalarType, IntrospectionUnionType, IntrospectionEnumType, IntrospectionInputObjectType, IntrospectionNamedTypeRef, IntrospectionNonNullTypeRef, IntrospectionListTypeRef, IntrospectionInputTypeRef, IntrospectionInputType, IntrospectionOutputTypeRef, IntrospectionOutputType, getIntrospectionQuery, IntrospectionQuery } from "graphql"
 
 
 export interface GetIntrospectionTypeResult {
@@ -210,4 +210,18 @@ export function analyzeSchemaByType(props: AnalyzeSchemaByTypeProps): AnalyzeSch
             }
         }
     }
+}
+
+export function getSchemaFromEndpoint(endpoint: string){
+    return fetch(endpoint, {
+        method: "POST",
+        body: JSON.stringify({ query: getIntrospectionQuery() }),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }).then(res => {
+        return res.json()
+    }).then((json: { data: IntrospectionQuery }) => {
+        return json.data.__schema
+    })
 }
