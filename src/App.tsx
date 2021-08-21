@@ -50,87 +50,67 @@ function ResolverSelector(props: ResolverSelectorProps) {
 function TemplateSchema(props: SchemaProps) {
   const { url } = useRouteMatch()
   const { type } = useParams<{ type: string }>()
-  const schema = analyzeSchemaByType({schema: props.schema, curType: type})
+  const schema = analyzeSchemaByType({ schema: props.schema, curType: type })
   if (schema) {
-    let content : JSX.Element
+    let content: JSX.Element
     if (schema.typeKind === 'Query'
-    || schema.typeKind === 'Mutation'
-    || schema.typeKind === 'Subscription') {
-        // * Query, Mutation, Subscription Type
-        // * View => FieldName(ArgName: ArgType) : FieldName
-        // TODO: 템플릿화
-        content = (
-          <div>
-            <h2>{schema.typeName}</h2>
-            <ul>
-              {/* Each Field */}
-              {schema.fields.map(field => {
-                const {details, plainType} = field.fieldType!
-                return (
-                  <li key={field.fieldName}>
-                    {field.fieldName}({
-                      // Each Args
-                      field.args && field.args.map((arg, idx, arr) => {
-                        const end = (idx + 1 < arr.length && ', ')
-                        const plainType = arg.fieldType!.plainType
-                        const details = arg.fieldType!.details
-                        return <span key={arg.fieldName}>{arg.fieldName} : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}{end}</span>
-                      })
-                    }) : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-          )
-      }
-      else if(schema.typeKind === 'Type') {
-        content = (
-          <div>
-            <h2>{schema.typeName} : {schema.typeKind}</h2>
-            <ul>
-              {schema.fields.map(field => {
-                const { plainType, details } = field.fieldType!
-                return (
-                  <li key={field.fieldName}>
-                    {field.fieldName} : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        )
-    }
-    else if(schema.typeKind === 'Enum'){
+      || schema.typeKind === 'Mutation'
+      || schema.typeKind === 'Subscription'
+      || schema.typeKind === 'Type') {
       content = (
         <div>
           <h2>{schema.typeName} : {schema.typeKind}</h2>
           <ul>
-            {schema.fields.map(enumValue => {return <li key={enumValue.fieldName}>{enumValue.fieldName}</li>})}
+            {/* Each Field */}
+            {schema.fields.map(({fieldName, args, fieldType}) => {
+              const { details, plainType } = fieldType!
+              return (
+                <li key={fieldName}>
+                  {fieldName}{args && !!args.length && `(${args.map((arg, idx, arr) => {
+                    const end = (idx + 1 < arr.length && ', ')
+                    const plainType = arg.fieldType!.plainType
+                    const details = arg.fieldType!.details
+                    return <span key={arg.fieldName}>{arg.fieldName} : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}{end}</span>
+                  })})`} : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}
+                </li>
+              )
+            })}
           </ul>
         </div>
       )
     }
-    else if(schema.typeKind ==='Union'){
+    else if (schema.typeKind === 'Enum') {
+      content = (
+        <div>
+          <h2>{schema.typeName} : {schema.typeKind}</h2>
+          <ul>
+            {schema.fields.map(enumValue => { return <li key={enumValue.fieldName}>{enumValue.fieldName}</li> })}
+          </ul>
+        </div>
+      )
+    }
+    else if (schema.typeKind === 'Union') {
       content = (
         <div>
           <h2>{schema.typeName} : {schema.typeKind}</h2>
           <ul>
             {schema.fields.map(possibleType => {
-              const {plainType, details} = possibleType.fieldType!
-              return <li key={possibleType.fieldName}>{details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}</li>})}
+              const { plainType, details } = possibleType.fieldType!
+              return <li key={possibleType.fieldName}>{details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}</li>
+            })}
           </ul>
         </div>
       )
     }
-    else if(schema.typeKind === 'Input'){
+    else if (schema.typeKind === 'Input') {
       content = (
         <div>
           <h2>{schema.typeName} : {schema.typeKind}</h2>
           <ul>
             {schema.fields.map(inputField => {
               const { plainType, details } = inputField.fieldType!
-              return <span key={inputField.fieldName}>{inputField.fieldName} : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}</span>})}
+              return <span key={inputField.fieldName}>{inputField.fieldName} : {details.front}<Link to={`${url}/${plainType}`}>{plainType}</Link>{details.back}</span>
+            })}
           </ul>
         </div>
       )
