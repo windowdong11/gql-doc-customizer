@@ -41,11 +41,6 @@ export function getIntrospectionType(type: IntrospectionTypeRef): GetIntrospecti
     }
 }
 
-export interface SchemaProps {
-    schema: IntrospectionSchema
-}
-
-
 // * 템플릿 사용할 수 있도록 변경하는 부분
 export interface AnalyzeSchemaField {
     fieldName: string

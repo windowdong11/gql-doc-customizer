@@ -1,5 +1,6 @@
+import { IntrospectionSchema } from "graphql"
 import { useRouteMatch, useParams, Link, Switch, Route } from "react-router-dom"
-import { SchemaProps, analyzeSchemaByType, AnalyzeSchemaResult } from "../introspector/schemaInspector"
+import { analyzeSchemaByType, AnalyzeSchemaResult } from "../introspector/schemaInspector"
 
 function SchemaTitle(props: { analyzeSchemaResult: Omit<AnalyzeSchemaResult, 'fields'> }) {
     const { typeName, typeKind } = props.analyzeSchemaResult
@@ -76,7 +77,10 @@ function SchemaContent({analyzeSchemaResult, pathUrl, curType}: SchemaContentPro
     }
 }
 
-export default function TemplateSchema(props: SchemaProps) {
+export interface TemplateSchmaProps {
+    schema: IntrospectionSchema
+}
+export default function TemplateSchema(props: TemplateSchmaProps) {
     const { url } = useRouteMatch()
     const { type } = useParams<{ type: string }>()
     const schema = analyzeSchemaByType({ schema: props.schema, curType: type })
