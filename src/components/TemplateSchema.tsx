@@ -7,7 +7,7 @@ function SchemaTitle(props: { analyzeSchemaResult: Omit<AnalyzeSchemaResult, 'fi
     return <h2>{typeName} : {typeKind}</h2>
 }
 interface SchemaContentProps { analyzeSchemaResult: AnalyzeSchemaResult, pathUrl: string, curType: string }
-function SchemaContent({analyzeSchemaResult, pathUrl, curType}: SchemaContentProps) {
+function SchemaContent({ analyzeSchemaResult, pathUrl, curType }: SchemaContentProps) {
     const schema = analyzeSchemaResult
     if (schema.typeKind === 'Query'
         || schema.typeKind === 'Mutation'
@@ -15,16 +15,20 @@ function SchemaContent({analyzeSchemaResult, pathUrl, curType}: SchemaContentPro
         || schema.typeKind === 'Type') {
         return (
             <ul>
+                {/* Print list of fields */}
                 {schema.fields.map(({ fieldName, args, fieldType }) => {
                     const { details, plainType } = fieldType!
                     return (
                         <li key={fieldName}>
-                            {fieldName}{args && !!args.length && '('}{args && !!args.length && args.map((arg, idx, arr) => {
+                            {fieldName}
+                            {args && !!args.length && '('}
+                            {args && !!args.length && args.map((arg, idx, arr) => {
                                 const end = (idx + 1 < arr.length && ', ')
                                 const plainType = arg.fieldType!.plainType
                                 const details = arg.fieldType!.details
                                 return <span key={arg.fieldName}>{arg.fieldName} : {details.front}<Link to={`${pathUrl}/${plainType}`}>{plainType}</Link>{details.back}{end}</span>
-                            })}{args && !!args.length && ')'} : {details.front}<Link to={`${pathUrl}/${plainType}`}>{plainType}</Link>{details.back}
+                            })}
+                            {args && !!args.length && ')'} : {details.front}<Link to={`${pathUrl}/${plainType}`}>{plainType}</Link>{details.back}
                         </li>
                     )
                 })}
@@ -33,47 +37,35 @@ function SchemaContent({analyzeSchemaResult, pathUrl, curType}: SchemaContentPro
     }
     else if (schema.typeKind === 'Enum') {
         return (
-            <div>
-                <SchemaTitle analyzeSchemaResult={schema}></SchemaTitle>
-                <ul>
-                    {schema.fields.map(enumValue => { return <li key={enumValue.fieldName}>{enumValue.fieldName}</li> })}
-                </ul>
-            </div>
+            <ul>
+                {schema.fields.map(enumValue => { return <li key={enumValue.fieldName}>{enumValue.fieldName}</li> })}
+            </ul>
         )
     }
     else if (schema.typeKind === 'Union') {
         return (
-            <div>
-                <SchemaTitle analyzeSchemaResult={schema}></SchemaTitle>
-                <ul>
-                    {schema.fields.map(possibleType => {
-                        const { plainType, details } = possibleType.fieldType!
-                        return <li key={possibleType.fieldName}>{details.front}<Link to={`${pathUrl}/${plainType}`}>{plainType}</Link>{details.back}</li>
-                    })}
-                </ul>
-            </div>
+            <ul>
+                {schema.fields.map(possibleType => {
+                    const { plainType, details } = possibleType.fieldType!
+                    return <li key={possibleType.fieldName}>{details.front}<Link to={`${pathUrl}/${plainType}`}>{plainType}</Link>{details.back}</li>
+                })}
+            </ul>
         )
     }
     else if (schema.typeKind === 'Input') {
         return (
-            <div>
-                <SchemaTitle analyzeSchemaResult={schema}></SchemaTitle>
-                <ul>
-                    {schema.fields.map(inputField => {
-                        const { plainType, details } = inputField.fieldType!
-                        return <span key={inputField.fieldName}>{inputField.fieldName} : {details.front}<Link to={`${pathUrl}/${plainType}`}>{plainType}</Link>{details.back}</span>
-                    })}
-                </ul>
-            </div>
+            <ul>
+                {schema.fields.map(inputField => {
+                    const { plainType, details } = inputField.fieldType!
+                    return <span key={inputField.fieldName}>{inputField.fieldName} : {details.front}<Link to={`${pathUrl}/${plainType}`}>{plainType}</Link>{details.back}</span>
+                })}
+            </ul>
         )
 
     }
     else {
-        return (
-            <div>
-                <SchemaTitle analyzeSchemaResult={schema}></SchemaTitle>
-            </div>
-        )
+        // schema.typeKind === 'Scalar'
+        return null
     }
 }
 
