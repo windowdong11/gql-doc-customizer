@@ -6,7 +6,7 @@ import TemplateSchema from './components/TemplateSchema';
 import { getSchemaFromEndpoint } from './introspector/schemaInspector';
 
 function App() {
-  const [endpoint, setEndpoint] = useState('http://localhost:4000')
+  const [endpoint, setEndpoint] = useState('https://api.spacex.land/graphql/')
   const [schema, setSchema] = useState<IntrospectionSchema>()
   if (schema) {
     console.log(schema)
